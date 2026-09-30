@@ -204,7 +204,7 @@ func (hc *healthChecker) check() {
 	case model.ProtoHTTP, model.ProtoHTTPS:
 		result = hc.checkHTTP(ctx)
 	case model.ProtoUDP:
-		result = hc.checkTCP(ctx)
+		result = hc.checkUDP(ctx)
 	default:
 		result = hc.checkTCP(ctx)
 	}
@@ -219,6 +219,7 @@ func (hc *healthChecker) check() {
 	if result.Status == HealthHealthy {
 		hc.consecutiveFailures = 0
 		hc.retryAttempt = 0
+		hc.cooldownUntil = time.Time{}
 		return
 	}
 
@@ -228,12 +229,12 @@ func (hc *healthChecker) check() {
 
 	hc.consecutiveFailures++
 
-	if hc.ctx.Err() == nil && hc.consecutiveFailures > hc.failThreshold {
-		hc.retryAttempt++
+	if hc.ctx.Err() == nil && hc.consecutiveFailures >= hc.failThreshold {
 		bo := hc.cooldown
 		if bo == 0 {
 			bo = nextBackoff(hc.interval, hc.retryAttempt)
 		}
+		hc.retryAttempt++
 
 		hc.log.Warn().
 			Int("consecutive_failures", hc.consecutiveFailures).
