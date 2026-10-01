@@ -604,7 +604,7 @@ func (proxy *Proxy) setStatus(status model.ProxyStatus) {
 
 	// When paused, block status updates from provider events.
 	// Only internal transitions (Pause → Paused, Resume → Running) are allowed.
-	if proxy.paused && status == model.ProxyStatusPaused {
+	if proxy.paused && status != model.ProxyStatusPaused {
 		proxy.mtx.Unlock()
 		return
 	}
@@ -617,7 +617,7 @@ func (proxy *Proxy) setStatus(status model.ProxyStatus) {
 		Timestamp: time.Now(),
 	})
 	if len(proxy.statusHistory) > maxStatusHistory {
-		proxy.statusHistory = proxy.statusHistory[:maxStatusHistory]
+		proxy.statusHistory = proxy.statusHistory[len(proxy.statusHistory)-maxStatusHistory:]
 	}
 
 	hostname := proxy.Config.Hostname
@@ -628,7 +628,7 @@ func (proxy *Proxy) setStatus(status model.ProxyStatus) {
 	proxy.mtx.Unlock()
 
 	if m != nil && ready {
-		m.SetProxyStatus(hostname, oldStatus.String())
+		m.SetProxyStatus(hostname, status.String())
 	}
 
 	if proxy.onUpdate != nil {
